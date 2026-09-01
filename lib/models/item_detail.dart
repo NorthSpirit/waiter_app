@@ -1,0 +1,57 @@
+class ItemIngredient {
+  final String name;
+  final String measurement;
+  final double amount;
+
+  ItemIngredient({required this.name, required this.measurement, required this.amount});
+
+  factory ItemIngredient.fromJson(Map<String, dynamic> json) {
+    return ItemIngredient(
+      name: json['name'] as String,
+      measurement: json['measurement'] as String? ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+class ItemDetail {
+  final int id;
+  final String name;
+  final String description;
+  final String instructions;
+  final String imageUrl;
+  final double price;
+  final bool isAvailable;
+  final List<ItemIngredient> ingredients;
+  final List<String> allergens;
+
+  ItemDetail({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.instructions,
+    required this.imageUrl,
+    required this.price,
+    required this.isAvailable,
+    required this.ingredients,
+    required this.allergens,
+  });
+
+  factory ItemDetail.fromJson(Map<String, dynamic> json) {
+    return ItemDetail(
+      id: json['id'] as int,
+      name: json['name'] as String,
+      description: json['description'] as String? ?? '',
+      instructions: json['instructions'] as String? ?? '',
+      imageUrl: json['image_url'] as String? ?? '',
+      price: (json['price'] as num).toDouble(),
+      isAvailable: json['is_available'] as bool? ?? true,
+      ingredients: (json['ingredients'] as List<dynamic>? ?? [])
+          .map((j) => ItemIngredient.fromJson(j as Map<String, dynamic>))
+          .toList(),
+      allergens: (json['allergens'] as List<dynamic>? ?? []).map((a) => a as String).toList(),
+    );
+  }
+
+  String get formattedPrice => '€${price.toStringAsFixed(2)}';
+}

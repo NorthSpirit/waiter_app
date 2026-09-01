@@ -1,0 +1,46 @@
+{
+    "colors": {
+        "brandLight": "#52D332",
+        "brandDark": "#064b17",
+        "content": "#533205",
+        "base": "#daae90",
+        "alert": "#FF0000"
+    },
+    "themes": {
+        "dark": {
+            "brandLight": "#52D332",
+            "brandDark": "#064b17",
+            "content": "#F5E6D3",
+            "base": "#1A1410",
+            "alert": "#FF4444"
+        },
+        "highContrast": {
+            "brandLight": "#000000",
+            "brandDark": "#000000",
+            "content": "#000000",
+            "base": "#FFFFFF",
+            "alert": "#CC0000"
+        },
+        "protanopia": {
+            "brandLight": "#4C86A8",
+            "brandDark": "#2F5F7A",
+            "content": "#1C2230",
+            "base": "#F2F6FA",
+            "alert": "#C94C4C"
+        },
+        "deuteranopia": {
+            "brandLight": "#6F8E4E",
+            "brandDark": "#4E6B35",
+            "content": "#1E2A1E",
+            "base": "#F3F7EE",
+            "alert": "#C94C4C"
+        },
+        "tritanopia": {
+            "brandLight": "#8A5C7A",
+            "brandDark": "#5B3A52",
+            "content": "#2A1F2A",
+            "base": "#F7EEF5",
+            "alert": "#C94C4C"
+        }
+    }
+}
