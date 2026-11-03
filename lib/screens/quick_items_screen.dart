@@ -30,6 +30,7 @@ class _QuickItemsScreenState extends State<QuickItemsScreen> {
   Future<void> _load() async {
     setState(() => _errorMessage = null);
     try {
+      // Upon loading quick items, the app sends the request for the server and gets the waiter's list.
       final items = await QuickItemsApi.list();
       setState(() => _items = items);
     } catch (e) {
@@ -39,6 +40,7 @@ class _QuickItemsScreenState extends State<QuickItemsScreen> {
 
   Future<void> _unpin(int itemId) async {
     try {
+      // Calls a method /api/waiter/quick-items/{itemID} to delete the pinned item from the pinned item list
       await QuickItemsApi.remove(itemId);
       _load();
     } catch (e) {
@@ -58,7 +60,8 @@ class _QuickItemsScreenState extends State<QuickItemsScreen> {
             ],
             title: 'Pinned Items',
             rightActions: [
-              if (Session.instance.pinMode)
+              if (Session.instance.pinMode) // Indicates that this is pin mode, based on the state
+              // To provide a clear visual indicator at a glance.
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
                   child: Row(
@@ -93,6 +96,7 @@ class _QuickItemsScreenState extends State<QuickItemsScreen> {
       );
     }
 
+    //Checks if pin mode been set in the settings.
     final pinMode = Session.instance.pinMode;
 
     return RefreshIndicator(
@@ -103,6 +107,7 @@ class _QuickItemsScreenState extends State<QuickItemsScreen> {
           final item = _items![index];
           return MenuItemTile(
             name: item.name,
+            // If it's a pin mode, it's an unpin button, if it's not, it's regular adding.
             price: pinMode ? 'Unpin' : item.formattedPrice,
             quantity: pinMode ? 0 : Cart.instance.quantityOf(item.itemId),
             onTap: () {

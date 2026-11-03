@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:waiter_app/api/server_locator.dart';
 import 'package:waiter_app/state/session.dart';
 
+// A small helper method, to provide status exception as a string, readable for the app (UI-friendly)
+// Status code is not printed, only the message.
 class ApiException implements Exception {
   final int statusCode;
   final String message;
@@ -12,30 +14,45 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+// Central place for all of the HTTP calls for the CommonTable server (either local or configured)
 class ApiClient {
+  
+  // Sends a POST requests with a JSON body (waiter app has only JSON integration).
+  // And returns a decoded JSON as a Map.
   static Future<Map<String, dynamic>> post(
+    // Path of the method, basically, base URL with whichever method is needed appended to it.
     String path,
     Map<String, dynamic> body, {
+    // Checks if the token is needed for whatever method.
     bool authenticated = false,
   }) async {
     return _withRediscoveryRetry(() async {
       final baseUrl = Session.instance.baseUrl;
+
+      //Doesn't even retry if there is no URL
       if (baseUrl == null) {
         throw ApiException(0, 'Server not found. Please check your connection.');
       }
 
+      // Once again, waiter app is meant to use JSON as intended
       final headers = {'Content-Type': 'application/json'};
       if (authenticated && Session.instance.token != null) {
+        // Attaches the login token from the session state (same one used everywhere)
         headers['Authorization'] = 'Bearer ${Session.instance.token}';
       }
 
+      // Since waiter app is primarily used in the local wifi, timer is set to a relatively short 5 seconds
+      // After which, it gives up 
       final response = await http
           .post(Uri.parse('$baseUrl$path'), headers: headers, body: jsonEncode(body))
           .timeout(const Duration(seconds: 5));
 
+      // Saves the token sent by the server
       _captureRefreshedToken(response);
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      // Checks if it's either a client error or a server error
       if (response.statusCode >= 400) {
         throw ApiException(response.statusCode, data['error'] ?? 'Request failed');
       }
@@ -43,8 +60,13 @@ class ApiClient {
     });
   }
 
+  // Sends a GET method, which should be the most often type by volume, like, get menus, get items from said menus, get quick items and so on...
+  // Returns dynamic (basically it means, I don't know yet during the compilation, so I'll check during runtime)
+  // Because JSON can be either be a Map or a list
   static Future<dynamic> get(String path, {bool authenticated = true}) async {
     return _withRediscoveryRetry(() async {
+
+      // Same pattern as above: check base URL, build headers, send, check response
       final baseUrl = Session.instance.baseUrl;
       if (baseUrl == null) {
         throw ApiException(0, 'Server not found. Please check your connection.');
@@ -70,6 +92,8 @@ class ApiClient {
     });
   }
 
+  // Sends a DELETE request, so far at this point, waiter can only delete their own quick item (as in unpin it)
+  // Doesn't return anything, if it succeeded.
   static Future<void> delete(String path) async {
     return _withRediscoveryRetry(() async {
       final baseUrl = Session.instance.baseUrl;
@@ -94,10 +118,10 @@ class ApiClient {
     });
   }
 
-  /// If a request fails to even connect (timeout, socket error — i.e. the
-  /// cached server address is probably stale, not just a normal 4xx/5xx),
-  /// this drops the cache, re-runs discovery, and retries the request
-  /// exactly once against whatever address discovery finds this time.
+  // If a request fails to even connect (timeout, socket error, whatever)
+  // Like, it could be a stale server adress, not a normal 4##/5###
+  // this skips the cached  address, re-runs discovery, saves the new adress and retries the request once.
+  // In hosted/demo mode, it retries the same URL the app was built with (SERVER_URL), since there is no discovery to find another one.
   static Future<T> _withRediscoveryRetry<T>(Future<T> Function() attempt) async {
     try {
       return await attempt();
@@ -113,6 +137,7 @@ class ApiClient {
     }
   }
 
+  // Saves a new updated session token
   static void _captureRefreshedToken(http.Response response) {
     final refreshed = response.headers['x-refreshed-token'];
     if (refreshed != null && refreshed.isNotEmpty) {

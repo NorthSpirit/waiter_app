@@ -1,3 +1,8 @@
+// Order status item model, to be held by order status
+// Representing the item_orders, which holds item id, order it, quanity and price as a snapshot at the time of the order
+// Item id, quantity and price is the direct correlationm
+// name is item's name at the point of the snapshot (in case it was renamed) gooten from item_orders
+// So if between ordering and now item was renamed, name would still be the one as ordered in this.
 class OrderStatusItem {
   final int itemId;
   final String name;
@@ -21,6 +26,12 @@ class OrderStatusItem {
   }
 }
 
+// Model, which closely mirrors the food_orders for the app
+// Like the original, it has it's own id (orderId), also order number, which is not the id,
+// for order numbers need to be readable outside of the database and might even be shared between other systems (banking stuff)
+// Number, status, creation date and notes are a direction correlation
+// Order Status items are gotten by joining orders with the item_orders belonging to said order (by id)
+// Table number (not id) is nullable: the server gets it by joining the tables, and a take-out order has no table, so it stays null.
 class OrderStatus {
   final int orderId;
   final int orderNumber;

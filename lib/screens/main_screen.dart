@@ -36,6 +36,7 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _loadMenus() async {
     setState(() => _errorMessage = null);
     try {
+      //Attempt to call the server and get the existing menus.
       final menus = await MenuApi.listMenus();
       setState(() => _menus = menus);
     } catch (e) {
@@ -232,7 +233,7 @@ class _MainScreenState extends State<MainScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        MenuScreen(menuId: menu.id, menuName: menu.name),
+                        MenuScreen(menuId: menu.id, menuName: menu.name), // Hands the menu id and name for the next screen.
                   ),
                 );
               },

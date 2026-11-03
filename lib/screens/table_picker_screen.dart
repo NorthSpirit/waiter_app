@@ -25,6 +25,7 @@ class _TablePickerScreenState extends State<TablePickerScreen> {
     _load();
   }
 
+  // Upon loading up, calls the server to receive full table list and sets the state with them
   Future<void> _load() async {
     try {
       final tables = await TableApi.listTables();
@@ -62,6 +63,8 @@ class _TablePickerScreenState extends State<TablePickerScreen> {
 
     return Column(
       children: [
+        // Take-out is always available, even if tables in the larger system aren't even created.
+        // The takeout is slightly divided from the proper tables for convenience
         InfoListTile(
           title: 'Take-Out (no table)',
           subtitle: 'For orders with no table assigned',
@@ -82,10 +85,14 @@ class _TablePickerScreenState extends State<TablePickerScreen> {
                     return InfoListTile(
                       title: 'Table ${table.number}',
                       subtitle: table.hasActiveOrder
+                          // Shows the capacity of the table, which is for quality of life
+                          // And also shows, if the table is free - as in, if it does have an order for this restaurant
+                          // No if it has a customer in general, since payments are split per restaurant.
                           ? 'Capacity ${table.capacity} — ${table.status} — you have an open order here'
                           : 'Capacity ${table.capacity} — ${table.status}',
                       arrowType: TrailingArrowType.chevron,
                       onTap: () {
+                        // Clicking the table sets state and returns
                         Cart.instance.setTable(table.id, table.number);
                         Navigator.pop(context, true);
                       },

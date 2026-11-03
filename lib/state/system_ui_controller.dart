@@ -2,11 +2,9 @@ import 'dart:async';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/services.dart';
 
-/// Keeps the Android status/nav bars hidden during normal use, but shows
-/// them automatically once battery drops to a critical level, so the
-/// waiter can still see the real battery indicator when it matters.
-/// Uses hysteresis (show at 10%, hide again at 15%) to avoid the bars
-/// flickering in and out right at the threshold.
+// Keeps the Android status/nav bar hidden during the normal use
+// So it wouldn't clutter the screen
+// However, it still allows the waiter to see the battery, if it goes low, so it wouldn't surprise anyone.
 class SystemUiController {
   static const int _showThreshold = 10;
   static const int _hideThreshold = 15;
@@ -23,9 +21,7 @@ class SystemUiController {
 
     _pollTimer = Timer.periodic(_pollInterval, (_) => _checkBattery());
 
-    // React immediately to plug-in/unplug rather than waiting for the
-    // next poll — charging state changes are cheap to listen for and
-    // catch the common "oh no, low battery, let me plug in" moment fast.
+    // Basically, plug/unplug is reacted to instantly, without waiting for the next poll.
     _stateSubscription = _battery.onBatteryStateChanged.listen((_) {
       _checkBattery();
     });
@@ -36,6 +32,8 @@ class SystemUiController {
     _stateSubscription?.cancel();
   }
 
+  // There is a slight deliberate gap to avoid flickering
+  // The bar is shown at 10%, but hidden again at 15% (as in it is charging and reaches 15 again)
   static Future<void> _checkBattery() async {
     final level = await _battery.batteryLevel;
 
@@ -46,6 +44,8 @@ class SystemUiController {
     }
   }
 
+  // Both set the _barsVisible flag, 
+  // Which _checkBattery reads, so that between 10% and 15% the bars keep their current state (the anti-flicker gap).
   static Future<void> _hideBars() async {
     _barsVisible = false;
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);

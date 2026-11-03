@@ -58,10 +58,14 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // Since this app doesn't use instant websockets or direct updating.
+  // Are updated periodically with the help of polling,.
   Future<void> _poll() async {
-    if (_messages.isEmpty) return;
+    //Waits until the first load is done, otherwise the first messages could be added twice.
+    if (_isLoading || _errorMessage != null) return;
     try {
-      final lastId = _messages.last.id;
+      // If the chat is still empty, id 0 asks the server for everything it has.
+      final lastId = _messages.isEmpty ? 0 : _messages.last.id;
       final newMessages = await ChatApi.pollAfter(lastId);
       if (newMessages.isNotEmpty && mounted) {
         final wasAtBottom = _isNearBottom();
@@ -73,14 +77,18 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // Used to allow waiter to read older messages
+  // Without it, user would be yanked back and it would be stupid annoying.
   bool _isNearBottom() {
     if (!_scrollController.hasClients) return true;
     final position = _scrollController.position;
     return position.pixels >= position.maxScrollExtent - 40;
   }
 
+  //If the waiter is looking at the bottom, yanking would be to the other direction.
+  //Jump to is instant, unlike animate too, which is smooth, so with it, it would be slide-y.
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) { //addPostFrame fires during the next frame, making sure calculation is right
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
       }
@@ -89,25 +97,32 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _handleSend() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty || _isSending) return;
+    if (text.isEmpty || _isSending) return; //Prevents from empty spam, trimmed = empty spaces are empty.
 
+    // Checks if the words are inside the preferably not-for-use list (cusses), if they are notifies and doesn't send
     if (!isValidGenericField(text)) {
-      setState(() => _validationError = "That doesn't look right — please rephrase.");
+      setState(
+        () => _validationError = "That doesn't look right — please rephrase.",
+      );
       return;
     }
 
     setState(() {
+      // Like with all others, sets the state to prevent spam and clears error.
       _isSending = true;
       _validationError = null;
     });
     _messageController.clear();
 
     try {
+      // Issues a call for the server
+      // And instantly polls, so it wouldn't feel clunky of you not seeing your own message.
       await ChatApi.send(text);
       await _poll();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
+          //For whatever reason (server derp, connection derp) the message didn't go out.
           const SnackBar(content: Text('Failed to send message.')),
         );
       }
@@ -126,7 +141,10 @@ class _ChatScreenState extends State<ChatScreen> {
         return Scaffold(
           appBar: StandardAppBar(
             leftActions: [
-              TouchIconWidget(icon: Icons.arrow_back, onTap: () => Navigator.pop(context)),
+              TouchIconWidget(
+                icon: Icons.arrow_back,
+                onTap: () => Navigator.pop(context),
+              ),
             ],
             title: 'Restaurant Chat',
           ),
@@ -145,10 +163,16 @@ class _ChatScreenState extends State<ChatScreen> {
                     children: [
                       if (_validationError != null)
                         Padding(
-                          padding: EdgeInsets.only(bottom: DesignTokens.spacingXs, left: DesignTokens.spacingXs),
+                          padding: EdgeInsets.only(
+                            bottom: DesignTokens.spacingXs,
+                            left: DesignTokens.spacingXs,
+                          ),
                           child: Text(
                             _validationError!,
-                            style: const TextStyle(color: Colors.red, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       Row(
@@ -204,7 +228,10 @@ class _ChatScreenState extends State<ChatScreen> {
           padding: EdgeInsets.only(bottom: DesignTokens.spacingXs),
           child: RichText(
             text: TextSpan(
-              style: TextStyle(color: theme.content, fontSize: DesignTokens.fontBody),
+              style: TextStyle(
+                color: theme.content,
+                fontSize: DesignTokens.fontBody,
+              ),
               children: [
                 TextSpan(
                   text: message.senderName,
@@ -212,7 +239,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 TextSpan(
                   text: ' (${message.sentAt}): ',
-                  style: TextStyle(color: theme.content.withValues(alpha: DesignTokens.opacitySoft)),
+                  style: TextStyle(
+                    color: theme.content.withValues(
+                      alpha: DesignTokens.opacitySoft,
+                    ),
+                  ),
                 ),
                 TextSpan(text: message.message),
               ],

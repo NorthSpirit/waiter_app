@@ -35,8 +35,10 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   Future<void> _loadItems() async {
+    //If there were previous shenanigans, the error message might have an error, so clear it just in case.
     setState(() => _errorMessage = null);
     try {
+      //Call the server and attempt to get the items of the menu picked. Menu id comes from the previous screen
       final items = await MenuApi.listMenuItems(widget.menuId);
       setState(() => _items = items);
     } catch (e) {
@@ -44,31 +46,41 @@ class _MenuScreenState extends State<MenuScreen> {
     }
   }
 
+  //Waiters have the ability to save their pinned items as basically a quick menu
   Future<void> _loadPinnedIds() async {
     try {
+      //Like with all the other stuff, calls the server to attempt to get the quick items for the waiter/manager.
       final quickItems = await QuickItemsApi.list();
       if (mounted) {
+        //Saves the IDs of pinned items, used to label tiles as Pin/Unpin.
         setState(() => _pinnedItemIds = quickItems.map((q) => q.itemId).toSet());
       }
     } catch (e) {
-      // If this fails, pin-mode still works — items just won't show as
-      // already-pinned until the next successful load.
+      // If this fails, pin-mode still works — items just won't show as already-pinned until it is successful reopened.
     }
   }
 
+  //Option to pin/unpin, it goes to pin/unpin mode, from the setting
   Future<void> _togglePin(MenuItem item) async {
+    //Checks if the list of pinned items has that item’s ID
     final isPinned = _pinnedItemIds.contains(item.id);
 
     try {
+      //Checks if the item is pinned
       if (isPinned) {
+        //Calls the server requesting to remove from pins.
         await QuickItemsApi.remove(item.id);
         setState(() => _pinnedItemIds.remove(item.id));
       } else {
+        //Item is not pinned yet, so call the server to add it to the pinned list.
+        //If it was a misclick, tapping the same button again unpins it.
         await QuickItemsApi.add(item.id);
         setState(() => _pinnedItemIds.add(item.id));
       }
     } catch (e) {
       if (mounted) {
+        //Waiters are limited to 15 items in the pin mode, because it should be the list of quick access, not the "I want it all" list
+        //When the limit is hit, the server's error says "max 15", so the app checks for that text.
         final message = e.toString().contains('max 15')
             ? 'Pin limit reached (max 15).'
             : 'Failed to update pinned items.';
@@ -103,6 +115,7 @@ class _MenuScreenState extends State<MenuScreen> {
               TouchIconWidget(
                 icon: Icons.shopping_cart,
                 onTap: () {
+                  //Returns to the previous screen, where the order button is.
                   Navigator.pop(context);
                 },
               ),
@@ -137,6 +150,7 @@ class _MenuScreenState extends State<MenuScreen> {
       return const Center(child: Text('No items on this menu.'));
     }
 
+    //Pin mode is changed in options, thus, saved in the session state and gotten from the session state
     final pinMode = Session.instance.pinMode;
 
     return RefreshIndicator(
@@ -160,6 +174,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 } else {
                   Navigator.push(
                     context,
+                    //Creates a new screen with item id already handed.
                     MaterialPageRoute(builder: (_) => ItemDetailScreen(itemId: item.id)),
                   );
                 }

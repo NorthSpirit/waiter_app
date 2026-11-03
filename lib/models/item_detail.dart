@@ -1,3 +1,6 @@
+// A representation of ingredient_in_item, as a joined selection
+// ingredient_in_item in the real server has a measurement and the amount
+// ingredient id is used to get the name of it.
 class ItemIngredient {
   final String name;
   final String measurement;
@@ -14,6 +17,10 @@ class ItemIngredient {
   }
 }
 
+// An object amalgam of food_item + 
+// it uses food_item's id, name, description, instructions, img url, price and check if it's available (on which can be checked by manager)
+// it also gets the allergen's name (name only), based on the relationship in the food_item_allergen table
+// And a list of items from ingredient_in_item shown above
 class ItemDetail {
   final int id;
   final String name;

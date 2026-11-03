@@ -33,6 +33,7 @@ class _WaiterLoginScreenState extends State<WaiterLoginScreen> {
     _loadSavedName();
   }
 
+  //Gets waiter's name if it's saved before for quality of life
   Future<void> _loadSavedName() async {
     final savedName = await SavedCredentials.getWaiterName();
     if (savedName != null && mounted) {
@@ -51,8 +52,10 @@ class _WaiterLoginScreenState extends State<WaiterLoginScreen> {
     final name = _nameController.text.trim();
     final pin = _pinController.text.trim();
 
+    //Clears error, just in case there was one before, like a failed attempt prior to this one.
     setState(() => _errorMessage = null);
 
+    //Name or password check - if there is anything at all
     if (name.isEmpty) {
       setState(() => _errorMessage = 'Please enter your name');
       return;
@@ -62,36 +65,43 @@ class _WaiterLoginScreenState extends State<WaiterLoginScreen> {
       return;
     }
 
+    //Spinner up
     setState(() => _isLoading = true);
 
     try {
+      //Try calling the server to confirm the credentials, if they are correct
       final result = await AuthApi.employeeLogin(
         Session.instance.restaurantId!,
         name,
         pin,
       );
 
+      //If it's correct, sets session token and staff member's role (role matters, cause it might be a waiter or a manager)
       Session.instance.token = result['token'] as String;
       Session.instance.employeeId = result['employee_id'] as int;
       Session.instance.employeeName = result['name'] as String;
       Session.instance.role = result['role'] as String;
 
+      //For quality of life, save waiter's name for the future
       await SavedCredentials.saveWaiterName(name);
 
+      if (!mounted) return;
+
+      //Spinner down
       setState(() => _isLoading = false);
 
-      if (!mounted) return;
+      //Replace this screen with the next one - the main screen.
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainScreen()),
       );
-    } on ApiException catch (e) {
+    } on ApiException catch (e) { //Credentials were not confirmed or some other rejection by the server.
       setState(() {
         _isLoading = false;
         _errorMessage = e.message;
       });
     } catch (e) {
-      setState(() {
+      setState(() { //Some other problem, mayhaps server is down or the internet is down.
         _isLoading = false;
         _errorMessage = 'Connection failed. Please try again.';
       });

@@ -39,6 +39,7 @@ class _LoginPrimeState extends State<LoginPrime> {
 
     setState(() => _errorMessage = null);
 
+    //Missing name or pass
     if (name.isEmpty) {
       setState(() => _errorMessage = 'Please enter restaurant name');
       return;
@@ -48,10 +49,11 @@ class _LoginPrimeState extends State<LoginPrime> {
       return;
     }
 
+    //sets the spinner thingy
     setState(() => _isLoading = true);
 
     try {
-      // Locate the server first, if we haven't already.
+      // Locate the server first, if it hasn't already.
       Session.instance.baseUrl ??= await ServerLocator.locate();
       if (Session.instance.baseUrl == null) {
         setState(() {
@@ -61,17 +63,24 @@ class _LoginPrimeState extends State<LoginPrime> {
         return;
       }
 
+      //Get restaurant stuff (logo, what the waiter creds are ) from name/pass inputs
       final result = await AuthApi.restaurantLogin(name, password);
 
+      //Set session, based on what was returned.
       Session.instance.restaurantId = result['restaurant_id'] as int;
       Session.instance.restaurantName = result['restaurant_name'] as String;
       Session.instance.restaurantLogoUrl = result['logo_url'] as String? ?? '';
 
       await SavedCredentials.saveRestaurant(name, password);
 
+
+      //If it is not mounted, checks if the screen exists
+      if (!mounted) return;
+
+      //Removes the spinner.
       setState(() => _isLoading = false);
 
-      if (!mounted) return;
+      //Opens next screen - waiter login
       Navigator.push(
         context,
         MaterialPageRoute(

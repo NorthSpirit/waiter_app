@@ -21,6 +21,14 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
   bool _isSubmitting = false;
   String? _errorMessage;
 
+  // Idempotency keys, which are generated once per screen, because logic dictates, new screen = new order
+  // Keyus are simple, large-ish set of 128 bits, 122 of them are random. The chance of them even matching is not 0.
+  // But it's EXTREMELY UNLIKELY.
+  // They are used to make sure, the order doesn't go in twice - server checks, if said key already exits.
+  // If order comes with the same key, it means it's a derp - maybe request went in twice.
+  // Maybe it seemed like it didn't, so it was send it again by the waiter, because something in the app derped.
+  // Idempotency keys still allows the situation, where same table wants 2 beers and when wants 2 beers again and again
+  // It's a different order with the same stuff - same items, same table.
   final String _idempotencyKey = const Uuid().v4();
 
   Future<void> _submit() async {
@@ -30,16 +38,21 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
     });
 
     try {
+      // Sends the request to send to the server, idempotency key makes sure it's actually an unique order
       await OrderApi.submit(_idempotencyKey);
+      // With order sent, cart state is cleared for quality of life.
       Cart.instance.clear();
       if (!mounted) return;
       Navigator.pop(context, true);
+      // One error, if there was a server error, like a deliberate one by the API layer itself
+      // NOT internet derping
     } on ApiException catch (e) {
       setState(() {
         _isSubmitting = false;
         _errorMessage = e.message;
       });
     } catch (e) {
+      // Catches if there was error of some other kind, maybe bad connectivity on the device or server internet problems
       setState(() {
         _isSubmitting = false;
         _errorMessage = 'Failed to submit — will retry safely if you try again.';

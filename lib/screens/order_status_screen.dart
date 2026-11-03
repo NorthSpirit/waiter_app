@@ -27,6 +27,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
   Future<void> _load() async {
     setState(() => _errorMessage = null);
     try {
+      // Like with all the others, calls the server with a request to get orders
       final orders = await OrderApi.listMyOrders();
       setState(() => _orders = orders);
     } catch (e) {
@@ -34,9 +35,14 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
     }
   }
 
+  // Options if one wants to cancel, keep if it was a misclick for example
+  // Flat out cancel, in case client wants nothing at all for example
+  // Copy exists because I didn't want already existing orders to be editable
+  // So instead it's like "that one is closed, there is a new one, where the old one left off"
   Future<void> _handleCancel(OrderStatus order) async {
     final choice = await showDialog<String>(
       context: context,
+      // context returns the choice to the code, which called it, to be used later.
       builder: (context) => AlertDialog(
         title: const Text('Cancel Order?'),
         content: const Text('Cancel this order, or cancel and copy its items to your cart to resubmit for a different table?'),
@@ -57,13 +63,18 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
       ),
     );
 
+    // If somebody tapped out, or decided to keep, it does nothing more, just returns.
     if (choice == null || choice == 'keep') return;
 
     try {
+      // First, cancels the order, which applies to both cancel and cancel and copy.
       await OrderApi.cancelOrder(order.orderId);
 
+      // If the choice was copy, it copies every items from the cancelled order to the waiter's cart state
       if (choice == 'copy') {
+        // First clears the state, to be safe
         Cart.instance.clear();
+        // And when goes item by item, adds them one by one, repeating X times for quantity, same logic as if button was clicked.
         for (final item in order.items) {
           for (var i = 0; i < item.quantity; i++) {
             Cart.instance.addItem(item.itemId, item.name, item.price);
@@ -138,6 +149,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
+                      // If there is no table number, in the system, it means it's a take-out
                       order.tableNumber == null ? 'Take-Out' : 'Table ${order.tableNumber}',
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: DesignTokens.fontH3),
                     ),

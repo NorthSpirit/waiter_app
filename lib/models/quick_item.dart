@@ -1,3 +1,7 @@
+// Apps class mirroring the waiter's quick items (which has employee id, item id and sort order)
+// employee id is based on the actual connected waiter/manger id, thus, it is not needed
+// actual item's data - name, image url, price, is gotten from the food_item, based on the ID
+// Sort order is, at the current iteration, not used 
 class QuickItem {
   final int itemId;
   final String name;
@@ -23,5 +27,6 @@ class QuickItem {
     );
   }
 
+  // Little helper method to format the price, like 4.5 turns into €4.50
   String get formattedPrice => '€${price.toStringAsFixed(2)}';
 }

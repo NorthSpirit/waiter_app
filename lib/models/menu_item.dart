@@ -1,3 +1,7 @@
+
+// A simplified representation of the food_items from the main server app.
+// it still has it's own id, name, description, price, check if it is still available (it can be ticked by managers or chefs)
+// Same as with all, restaurant ID is the id of the logged in waiter/manager, thus representation object doesn't have one of it's own
 class MenuItem {
   final int id;
   final String name;

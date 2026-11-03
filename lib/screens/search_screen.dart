@@ -22,6 +22,8 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
+
+  //Nullable timer to grant waiter some grace, between key presses
   Timer? _debounce;
 
   List<MenuItem>? _results;
@@ -53,6 +55,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
+  //Does stuff it the input field value had changed, basically you typed something else
   void _onChanged(String value) {
     _debounce?.cancel();
     if (value.trim().isEmpty) {
@@ -62,36 +65,49 @@ class _SearchScreenState extends State<SearchScreen> {
       });
       return;
     }
+
+    //Waits until typing pauses for 350ms, then searches. Avoids a server call on every keystroke or slow fingers situation.
     _debounce = Timer(const Duration(milliseconds: 350), () => _search(value.trim()));
   }
 
   Future<void> _search(String query) async {
     setState(() {
+      //Tells that is searching, so screen wouldn't feel weird while search is going, just adds the spinner.
       _isSearching = true;
       _errorMessage = null;
     });
     try {
+      //Sends the request with the search, based on name (in internship version, for now only by name exists)
       final results = await MenuApi.search(query);
+      //Sets the results
       if (mounted) setState(() => _results = results);
     } catch (e) {
+      //Search failed for whatever reason, could be server derp could be some other problems.
       if (mounted) setState(() => _errorMessage = 'Search failed.');
     } finally {
+      //Search is done for now.
       if (mounted) setState(() => _isSearching = false);
     }
   }
 
+  //Same pinning logic as in the menu screen.
   Future<void> _togglePin(MenuItem item) async {
+    //Checks if the list of pinned items has that item’s ID
     final isPinned = _pinnedItemIds.contains(item.id);
     try {
       if (isPinned) {
+        //Calls the server requesting to remove from pins.
         await QuickItemsApi.remove(item.id);
         setState(() => _pinnedItemIds.remove(item.id));
       } else {
+        //Item is not pinned yet, so call the server to add it to the pinned list.
+        //If it was a misclick, tapping the same button again unpins it.
         await QuickItemsApi.add(item.id);
         setState(() => _pinnedItemIds.add(item.id));
       }
     } catch (e) {
       if (mounted) {
+        //Once again, limits how many items there are, no more than 15 items.
         final message = e.toString().contains('max 15')
             ? 'Pin limit reached (max 15).'
             : 'Failed to update pinned items.';

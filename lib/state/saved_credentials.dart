@@ -1,13 +1,12 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Persists just enough to skip the restaurant login screen on future
-/// app launches, and to pre-fill (not skip) the waiter's own login.
-///
-/// Restaurant password is kept in encrypted secure storage since it's a
-/// real credential; restaurant/waiter names are plain text since they're
-/// not secrets. The waiter's PIN is never persisted anywhere — re-entering
-/// it every launch is the deliberate security boundary here.
+// User's credentials saved by the app
+// allowing to skip restaurant login screen next time the app is launched
+// and also fill in the waiter's credentials (not by-pass) for quality of life
+// restaurant password is saved encrypted by the flutter_secure_storage package (uses the phone's),
+// restaurant name in plain shared_preferences.
+// and waiter's password is not saved at all
 class SavedCredentials {
   static const _secureStorage = FlutterSecureStorage();
 
@@ -39,8 +38,9 @@ class SavedCredentials {
     return prefs.getString(_waiterNameKey);
   }
 
-  /// Clears the remembered restaurant login — used when explicitly
-  /// switching restaurants, not on a normal per-shift logout.
+  // Clears the remembered restaurant login, for example, if someone switches restaurant on the device.
+  // For example in the scenarios, where food hall shares the devices.
+  // It is also used in the main, if for whatever reason saved password no longer works (mayhaps admin changed it or whatever)
   static Future<void> clearRestaurant() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_restaurantNameKey);

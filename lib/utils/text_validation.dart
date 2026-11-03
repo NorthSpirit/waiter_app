@@ -1,3 +1,5 @@
+// Some helper for waiter's chat swearing, note, false positive is considered worse than a false negative
+// Since the chats are internal anyhow
 final Set<String> _swears = {
   // English
   'fuck', 'fucking', 'fucker', 'fucked',
@@ -71,6 +73,7 @@ bool _containsSwear(String value) {
     if (_swears.contains(token)) return true;
   }
 
+  // Stops the splitting like "Wo" + "RD" still is a "WORD"
   for (var i = 0; i < tokens.length - 1; i++) {
     final joined = tokens[i] + tokens[i + 1];
     if (_swears.contains(joined)) return true;
@@ -79,7 +82,7 @@ bool _containsSwear(String value) {
   return false;
 }
 
-/// Mirrors whitelist_blacklist_chars.js's
+// Mirrors whitelist_blacklist_chars.js's
 bool isValidGenericField(String value) {
   if (value.isEmpty) return false;
 
@@ -95,8 +98,7 @@ bool isValidGenericField(String value) {
     return false;
   }
 
-  // Whitelist: letters, marks, digits, whitespace, and a small set of
-  // punctuation. 
+  // Whitelist: letters, marks, digits, whitespace, and a small set of punctuation. 
   if (!RegExp(r"^[\p{L}\p{M}0-9\s'\-.,]+$", unicode: true).hasMatch(value)) {
     return false;
   }

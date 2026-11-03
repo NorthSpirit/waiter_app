@@ -5,6 +5,7 @@ import 'package:waiter_app/theme/design_tokens.dart';
 import 'package:waiter_app/theme/theme_manager.dart';
 import 'package:waiter_app/widgets/components/action/touch_icon_widget.dart';
 import 'package:waiter_app/widgets/components/display/standard_app_bar.dart';
+import 'package:waiter_app/state/session.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final int itemId;
@@ -27,6 +28,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   Future<void> _load() async {
     try {
+      // Calls server to receive singular, specific item details (name, )
       final item = await MenuApi.getItemDetail(widget.itemId);
       setState(() => _item = item);
     } catch (e) {
@@ -70,7 +72,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         if (item.imageUrl.isNotEmpty)
           ClipRRect(
             borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-            child: Image.network(item.imageUrl, height: 180, width: double.infinity, fit: BoxFit.cover),
+            child: Image.network('${Session.instance.baseUrl}${item.imageUrl}', height: 180, width: double.infinity, fit: BoxFit.cover),
           ),
         const SizedBox(height: DesignTokens.spacingSm),
         Text(
